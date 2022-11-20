@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: Zlib */
 
+#include <girara/datastructures.h>
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <girara/utils.h>
@@ -13,6 +14,7 @@
 #include "utils.h"
 #include "page.h"
 #include "render.h"
+#include "zathura/types.h"
 
 struct zathura_link_s {
   zathura_rectangle_t position; /**< Position of the link */
@@ -119,6 +121,40 @@ zathura_link_get_target(zathura_link_t* link)
 }
 
 static void
+link_highlight_rects(zathura_t* zathura, const zathura_link_target_t* target)
+{
+  const int page = target->page_number;
+
+  const unsigned int num_pages = zathura_document_get_number_of_pages(zathura->document);
+
+  for (unsigned int p = 0; p != num_pages; ++p) {
+    GObject* widget = G_OBJECT(zathura->pages[p]);
+
+    if (p != page) {
+      g_object_set(widget, "draw-links", FALSE, "search-results", girara_list_new2(g_free),
+                 NULL);
+      g_object_set(widget, "search-current", 0, NULL);
+    } else {
+      zathura_page_t* doc_page = zathura_document_get_page(zathura->document, page);
+      double page_height = zathura_page_get_height(doc_page);
+      double page_width  = zathura_page_get_width(doc_page);
+
+      zathura_rectangle_t rect = {
+        target->left, target->top, page_width * 0.9, target->top + 20
+      };
+      girara_list_t* rects = girara_list_new2(g_free);
+      zathura_rectangle_t* real_rect = g_try_malloc(sizeof(zathura_rectangle_t));
+      *real_rect = rect;
+      girara_list_append(rects, real_rect);
+      g_object_set(widget, "draw-links", FALSE, "search-results", rects,
+                   NULL);
+    }
+  }
+
+  document_draw_search_results(zathura, true);
+}
+
+static void
 link_goto_dest(zathura_t* zathura, const zathura_link_t* link)
 {
   if (link->target.destination_type == ZATHURA_LINK_DESTINATION_UNKNOWN) {
@@ -135,6 +171,11 @@ link_goto_dest(zathura_t* zathura, const zathura_link_t* link)
     render_all(zathura);
   }
 
+  const zathura_link_target_t* target = &link->target;
+  girara_debug("Target geometry: %d (b: %f, t: %f, l: %f, r: %f)", target->page_number,
+               target->bottom, target->top, target->left, target->right);
+  
+  link_highlight_rects(zathura, &link->target);
   /* get page */
   zathura_page_t* page = zathura_document_get_page(zathura->document,
       link->target.page_number);
