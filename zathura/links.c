@@ -123,7 +123,7 @@ zathura_link_get_target(zathura_link_t* link)
 static void
 link_highlight_rects(zathura_t* zathura, const zathura_link_target_t* target)
 {
-  const int page = target->page_number;
+  const unsigned int page = target->page_number;
 
   const unsigned int num_pages = zathura_document_get_number_of_pages(zathura->document);
 
@@ -140,7 +140,8 @@ link_highlight_rects(zathura_t* zathura, const zathura_link_target_t* target)
       double page_width  = zathura_page_get_width(doc_page);
 
       zathura_rectangle_t rect = {
-        target->left, target->top, page_width * 0.9, target->top + 20
+        target->left, target->top, page_width * 0.9,
+        target->top + page_height * 0.025
       };
       girara_list_t* rects = girara_list_new2(g_free);
       zathura_rectangle_t* real_rect = g_try_malloc(sizeof(zathura_rectangle_t));
