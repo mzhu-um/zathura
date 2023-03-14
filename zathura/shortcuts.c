@@ -1212,7 +1212,7 @@ sc_toggle_index(girara_session_t* session, girara_argument_t* UNUSED(argument),
     }
 
     document_index_build(model, NULL, document_index);
-    girara_node_free(document_index);
+//    girara_node_free(document_index);
 
     /* setup widget */
     gtk_tree_view_insert_column_with_attributes(GTK_TREE_VIEW (treeview), 0, "Title", renderer, "markup", 0, NULL);
